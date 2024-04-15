@@ -13,6 +13,22 @@
 
 #include "hc06.h"
 
+typedef struct adc {
+    char axis;
+    int val;
+} adc_t;
+
+void write_package(adc_t data) {
+    int val = data.val;
+    int msb = val >> 8;
+    int lsb = val & 0xFF;
+
+    uart_putc_raw(HC06_UART_ID, data.axis);
+    uart_putc_raw(HC06_UART_ID, msb);
+    uart_putc_raw(HC06_UART_ID, lsb);
+}
+
+
 void hc06_task(void *p) {
     uart_init(HC06_UART_ID, HC06_BAUD_RATE);
     gpio_set_function(HC06_TX_PIN, GPIO_FUNC_UART);
