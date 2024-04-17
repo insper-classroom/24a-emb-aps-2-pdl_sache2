@@ -90,6 +90,16 @@ void btn_callback(uint gpio, uint32_t events) {
     xQueueSendFromISR(xQueueBTN, &btnPressed, NULL);
 }
 
+// Function to initialize a single button
+void init_button(uint pin) {
+    gpio_init(pin);  // Initialize GPIO pin
+    gpio_set_dir(pin, GPIO_IN);  // Set GPIO direction to input
+    gpio_pull_up(pin);  // Enable pull-up resistor
+
+    // Enable interrupt for the button
+    gpio_set_irq_enabled_with_callback(pin, GPIO_IRQ_EDGE_FALL, true, &btn_callback);
+}
+
 void init_buttons(void) {
     init_button(BTN_A);
     init_button(BTN_B);
@@ -105,15 +115,7 @@ void init_buttons(void) {
     init_button(BTN_DPAD_RIGHT);
 }
 
-// Function to initialize a single button
-void init_button(uint pin) {
-    gpio_init(pin);  // Initialize GPIO pin
-    gpio_set_dir(pin, GPIO_IN);  // Set GPIO direction to input
-    gpio_pull_up(pin);  // Enable pull-up resistor
 
-    // Enable interrupt for the button
-    gpio_set_irq_enabled_with_callback(pin, GPIO_IRQ_EDGE_FALL, true, &btn_callback);
-}
 
 void write_package(adc_t data) {
     int val = data.val;
@@ -123,6 +125,8 @@ void write_package(adc_t data) {
     uart_putc_raw(uart0, data.axis); //HC06_UART_ID
     uart_putc_raw(uart0, msb);
     uart_putc_raw(uart0, lsb);
+    uart_putc_raw(uart0, -1);
+
 }
 
 void adc_setup() {
@@ -156,7 +160,7 @@ int read_and_scale_adc(int axis) {
 
     int scaled_val = ((avg - 2048) / 8);
 
-    if ((scaled_val > -180) && (scaled_val < 180)) {
+    if ((scaled_val > -200) && (scaled_val < 200)) {
         scaled_val = 0; // Apply deadzone
     }
 
@@ -165,11 +169,16 @@ int read_and_scale_adc(int axis) {
 
 void xm_task(void *p) {
     adc_t data;
-    data.axis = 12; // X-axis
+     // X-axis
+    
 
     while (1) {
+        data.axis = 12;
         data.val = read_and_scale_adc(0);
-        xQueueSend(xQueueAdcm, &data, portMAX_DELAY);
+        //printf("valor: %d\n",data.val);
+        //printf("indice e valor x do joystick: %d, %d\n",data.axis,data.val);
+        if (data.val != 0)
+            xQueueSend(xQueueAdcm, &data, portMAX_DELAY);
         vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
@@ -179,8 +188,11 @@ void ym_task(void *p) {
     data.axis = 13; // Y-axis
 
     while (1) {
+        data.axis = 13;
         data.val = read_and_scale_adc(1);
-        xQueueSend(xQueueAdcm, &data, portMAX_DELAY);
+        //printf("indice e valor y do joystick: %d, %d\n",data.axis,data.val);
+        if (data.val != 0)
+            xQueueSend(xQueueAdcm, &data, portMAX_DELAY);
         vTaskDelay(pdMS_TO_TICKS(10));
     }
     
@@ -192,7 +204,8 @@ void xf_task(void *p) {
 
     while (1) {
         data.val = read_and_scale_adc(2);
-        xQueueSend(xQueueAdcf, &data, portMAX_DELAY);
+        if (data.val != 0)
+            xQueueSend(xQueueAdcf, &data, portMAX_DELAY);
         vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
@@ -203,7 +216,8 @@ void yf_task(void *p) {
 
     while (1) {
         data.val = read_and_scale_adc(3);
-        xQueueSend(xQueueAdcf, &data, portMAX_DELAY);
+        if (data.val != 0)
+            xQueueSend(xQueueAdcf, &data, portMAX_DELAY);
         vTaskDelay(pdMS_TO_TICKS(10));
     }
     
@@ -236,7 +250,7 @@ void btn_task(void *p) {
     
     while (1) {
         if (xQueueReceive(xQueueBTN, &BtnValue, portMAX_DELAY)) {
-            data.axis = BtnValue;
+            //data.axis = BtnValue;
             data.val = 1;
             write_package(data);
         }
@@ -259,12 +273,12 @@ int main() {
 
     xQueueAdcm = xQueueCreate(32, sizeof(adc_t));
     xQueueAdcf = xQueueCreate(32, sizeof(adc_t));
-    xQueueBTN = xQueueCreate(1, sizeof(u_int16_t));
+    xQueueBTN = xQueueCreate(1, sizeof(uint));
     xSemaphorePower = xSemaphoreCreateBinary();
 
     xTaskCreate(xm_task, "Xm Task", 256, NULL, 1, NULL);
-    xTaskCreate(ym_task, "Ym Task", 256, NULL, 1, NULL);
-    xTaskCreate(uartm_task, "UARTm Task", 256, NULL, 1, NULL);
+   xTaskCreate(ym_task, "Ym Task", 256, NULL, 1, NULL);
+     xTaskCreate(uartm_task, "UARTm Task", 256, NULL, 1, NULL);
 
     xTaskCreate(xf_task, "Xf Task", 256, NULL, 1, NULL);
     xTaskCreate(yf_task, "Yf Task", 256, NULL, 1, NULL);

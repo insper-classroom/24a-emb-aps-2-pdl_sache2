@@ -1,7 +1,7 @@
 import serial
 import uinput
 
-ser = serial.Serial('/dev/ttyACM0', 9600) # Mude a porta para rfcomm0 se estiver usando bluetooth no linux
+ser = serial.Serial('/dev/ttyACM0', 115200) # Mude a porta para rfcomm0 se estiver usando bluetooth no linux
 # Caso você esteja usando windows você deveria definir uma porta fixa para seu dispositivo (para facilitar sua vida mesmo)
 # Siga esse tutorial https://community.element14.com/technologies/internet-of-things/b/blog/posts/standard-serial-over-bluetooth-on-windows-10 e mude o código acima para algo como: ser = serial.Serial('COMX', 9600) (onde X é o número desejado)
 
@@ -42,7 +42,7 @@ def parse_data(data):
     int, int: O número do botão e o valor do botão.
     """
     button = data[0]  # Axis no C, o botão apertado
-    value = int.from_bytes(data[1:3], byteorder='little', signed=True) # Valor do botão (Apertado, não apertado ou algum outro estado)
+    value = int.from_bytes(data[1:3], byteorder='big', signed=True) # Valor do botão (Apertado, não apertado ou algum outro estado)
     print(f"Received data: {data}")
     print(f"button: {button}, value: {value}")
     return button, value
@@ -74,6 +74,7 @@ try:
 
         # Lendo 4 bytes da uart
         data = ser.read(3)
+        print(data)
         button, value = parse_data(data)
         emulate_controller(button, value)
 
