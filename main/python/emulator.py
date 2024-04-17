@@ -12,19 +12,19 @@ buttons = [uinput.BTN_A, # 0
     uinput.BTN_Y, # 3
     uinput.BTN_TL, # 4
     uinput.BTN_TR, # 5
-    uinput.BTN_TL2, # 6
-    uinput.BTN_TR2, # 7
-    uinput.BTN_SELECT, # 8
-    uinput.BTN_START, # 9
+    #uinput.BTN_TL2, # 6
+    #uinput.BTN_TR2, # 7
+    #uinput.BTN_SELECT, # 8
+    #uinput.BTN_START, # 9
     uinput.BTN_THUMBL, # 10
     uinput.BTN_THUMBR, # 11
     uinput.BTN_DPAD_UP, # 12
     uinput.BTN_DPAD_DOWN, # 13
-    # uinput.BTN_DPAD_LEFT,
-    # uinput.BTN_DPAD_RIGHT,
+    uinput.BTN_DPAD_LEFT,
+    uinput.BTN_DPAD_RIGHT,
           ]
-axes = [uinput.ABS_X, uinput.ABS_Y]
-button_quantity = 14 # Quantidade de botões no controlador (sem contar com o joystick)
+axes = [uinput.ABS_X, uinput.ABS_Y,uinput.ABS_RX, uinput.ABS_RY]
+button_quantity = 12 # Quantidade de botões no controlador (sem contar com o joystick)
 
 # Criando gamepad emulado
 device = uinput.Device(buttons + axes)
@@ -38,7 +38,7 @@ def parse_data(data):
     Argumentos:
     data (bytes): Os dados recebidos do dispositivo externo.
 
-    Retorna:
+    Retorna:device.emit(axes[button - button_quantity], value)
     int, int: O número do botão e o valor do botão.
     """
     button = data[0]  # Axis no C, o botão apertado
