@@ -34,7 +34,7 @@
 #define BTN_DPAD_DOWN 11
 #define BTN_DPAD_LEFT 12
 #define BTN_DPAD_RIGHT 13
-#define LED_BLUE 14
+#define BUZZER 14
 #define LED_GREEN 15
 
 QueueHandle_t xQueueAdcm;
@@ -52,6 +52,7 @@ typedef struct adc {
 //     if (events == 0x4) {
 //         if (gpio == BTN_POWER){
 //             xSemaphoreGive(xSemaphorePower);
+
 //         }
 
 //     } 
@@ -116,6 +117,19 @@ void init_buttons(void) {
     init_button(BTN_DPAD_LEFT);
     init_button(BTN_DPAD_RIGHT);
 }
+
+// void beep(int pin, int freq, int time){
+//     gpio_init(BUZZER);  // Initialize GPIO pin
+//     gpio_set_dir(BUZZER, GPIO_OUT); 
+//     long delay = 1000000 / (2 * freq);
+//     long cycles = (long)freq * time / 1000;
+//     for (long i = 0; i < cycles; i++){
+//         gpio_put(pin, 1);
+//         sleep_us(delay);
+//         gpio_put(pin, 0);
+//         sleep_us(delay);
+//     }
+// }
 
 
 
@@ -273,6 +287,7 @@ void btn_task(void *p) {
 }
 
 void led_task(void *p){
+    //beep(BUZZER,500,500);
     gpio_init(LED_GREEN);  // Initialize GPIO pin
     gpio_set_dir(LED_GREEN, GPIO_OUT);
     gpio_put(LED_GREEN,1);
@@ -289,14 +304,14 @@ int main() {
 
     xTaskCreate(xm_task, "Xm Task", 256, NULL, 1, NULL);
     xTaskCreate(ym_task, "Ym Task", 256, NULL, 1, NULL);
-     xTaskCreate(uartm_task, "UARTm Task", 256, NULL, 1, NULL);
+    xTaskCreate(uartm_task, "UARTm Task", 256, NULL, 1, NULL);
 
     //xTaskCreate(xf_task, "Xf Task", 256, NULL, 1, NULL);
     //xTaskCreate(yf_task, "Yf Task", 256, NULL, 1, NULL);
     //xTaskCreate(uartf_task, "UARTf Task", 256, NULL, 1, NULL);
 
     xTaskCreate(btn_task, "btn Task", 256, NULL, 1, NULL);
-    xTaskCreate(led_task, "led Task", 256, NULL, 1, NULL);
+    //xTaskCreate(led_task, "led Task", 256, NULL, 1, NULL);
 
     vTaskStartScheduler();
 
