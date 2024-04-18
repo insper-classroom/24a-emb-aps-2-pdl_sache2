@@ -11,6 +11,7 @@
 #include "pico/stdlib.h"
 #include <stdio.h>
 #include "hardware/adc.h"
+#include "hardware/pwm.h"
 #include <math.h>
 
 #include "hc06.h"
@@ -33,7 +34,8 @@
 #define BTN_DPAD_DOWN 11
 #define BTN_DPAD_LEFT 12
 #define BTN_DPAD_RIGHT 13
-#define BTN_POWER 14
+#define LED_BLUE 14
+#define LED_GREEN 15
 
 QueueHandle_t xQueueAdcm;
 QueueHandle_t xQueueAdcf;
@@ -45,15 +47,15 @@ typedef struct adc {
     int val;
 } adc_t;
 
-void btnpower_callback(uint gpio, uint32_t events) {
+// void btnpower_callback(uint gpio, uint32_t events) {
 
-    if (events == 0x4) {
-        if (gpio == BTN_POWER){
-            xSemaphoreGive(xSemaphorePower);
-        }
+//     if (events == 0x4) {
+//         if (gpio == BTN_POWER){
+//             xSemaphoreGive(xSemaphorePower);
+//         }
 
-    } 
-}
+//     } 
+// }
 
 void btn_callback(uint gpio, uint32_t events) {
     uint btnPressed = 0;
@@ -160,7 +162,7 @@ int read_and_scale_adc(int axis) {
 
     int scaled_val = ((avg - 2048) / 8);
 
-    if ((scaled_val > -200) && (scaled_val < 200)) {
+    if ((scaled_val > -250) && (scaled_val < 250)) {
         scaled_val = 0; // Apply deadzone
     }
 
@@ -169,11 +171,12 @@ int read_and_scale_adc(int axis) {
 
 void xm_task(void *p) {
     adc_t data;
+    data.axis = 12;
      // X-axis
     
 
     while (1) {
-        data.axis = 12;
+        
         data.val = read_and_scale_adc(0);
         //printf("valor: %d\n",data.val);
         //printf("indice e valor x do joystick: %d, %d\n",data.axis,data.val);
@@ -188,7 +191,6 @@ void ym_task(void *p) {
     data.axis = 13; // Y-axis
 
     while (1) {
-        data.axis = 13;
         data.val = read_and_scale_adc(1);
         //printf("indice e valor y do joystick: %d, %d\n",data.axis,data.val);
         if (data.val != 0)
@@ -198,30 +200,30 @@ void ym_task(void *p) {
     
 }
 
-void xf_task(void *p) {
-    adc_t data;
-    data.axis = 14; // X-axis
+// void xf_task(void *p) {
+//     adc_t data;
+//     data.axis = 14; // X-axis
 
-    while (1) {
-        data.val = read_and_scale_adc(2);
-        if (data.val != 0)
-            xQueueSend(xQueueAdcf, &data, portMAX_DELAY);
-        vTaskDelay(pdMS_TO_TICKS(10));
-    }
-}
+//     while (1) {
+//         data.val = read_and_scale_adc(2);
+//         if (data.val != 0)
+//             xQueueSend(xQueueAdcf, &data, portMAX_DELAY);
+//         vTaskDelay(pdMS_TO_TICKS(10));
+//     }
+// }
 
-void yf_task(void *p) {
-    adc_t data;
-    data.axis = 15; // Y-axis
+// void yf_task(void *p) {
+//     adc_t data;
+//     data.axis = 15; // Y-axis
 
-    while (1) {
-        data.val = read_and_scale_adc(3);
-        if (data.val != 0)
-            xQueueSend(xQueueAdcf, &data, portMAX_DELAY);
-        vTaskDelay(pdMS_TO_TICKS(10));
-    }
+//     while (1) {
+//         data.val = read_and_scale_adc(3);
+//         if (data.val != 0)
+//             //xQueueSend(xQueueAdcf, &data, portMAX_DELAY);
+//         vTaskDelay(pdMS_TO_TICKS(10));
+//     }
     
-}
+// }
 
 void uartm_task(void *p) {
     adc_t data;
@@ -230,41 +232,50 @@ void uartm_task(void *p) {
         if (xQueueReceive(xQueueAdcm, &data, portMAX_DELAY)) {
             write_package(data);
         }
+        
     }
 }
 
-void uartf_task(void *p) {
-    adc_t data;
+// void uartf_task(void *p) {
+//     adc_t data;
     
-    while (1) {
-        if (xQueueReceive(xQueueAdcf, &data, portMAX_DELAY)) {
-            write_package(data);
-        }
-    }
-}
+//     while (1) {
+//         if (xQueueReceive(xQueueAdcf, &data, portMAX_DELAY)) {
+//             write_package(data);
+//         }
+//     }
+// }
 
 void btn_task(void *p) {
-    init_buttons();
+    init_buttons();  // Assegura que os botões estão inicializados
+    
     uint BtnValue;
     adc_t data;
-    
+    static TickType_t last_press_time[14] = {0};  // Array para armazenar o último tempo de pressionamento de cada botão
+    TickType_t current_time;
+    const TickType_t debounce_delay = pdMS_TO_TICKS(300);  // Conversão de tempo de debounce para ticks
+
     while (1) {
         if (xQueueReceive(xQueueBTN, &BtnValue, portMAX_DELAY)) {
-            //data.axis = BtnValue;
-            data.val = 1;
-            write_package(data);
+            current_time = xTaskGetTickCount();  // Pega o tempo atual em ticks
+
+            // Verifica se o intervalo desde o último pressionamento é maior que o tempo de debounce
+            if (current_time - last_press_time[BtnValue] >= debounce_delay) {
+                last_press_time[BtnValue] = current_time;  // Atualiza o último tempo de pressionamento para o botão atual
+                
+                // Prepara o pacote de dados para ser enviado
+                data.axis = BtnValue;
+                data.val = 1;
+                write_package(data);  // Envio do pacote
+            }
         }
     }
 }
 
 void led_task(void *p){
-    gpio_init(BTN_POWER);
-    gpio_set_dir(BTN_POWER, GPIO_OUT); 
-    while(1){
-        if (xSemaphoreTake(xSemaphorePower, portMAX_DELAY) == pdTRUE){
-            gpio_put(BTN_POWER,1);
-        }
-    }
+    gpio_init(LED_GREEN);  // Initialize GPIO pin
+    gpio_set_dir(LED_GREEN, GPIO_OUT);
+    gpio_put(LED_GREEN,1);
 }
 
 int main() {
@@ -277,12 +288,12 @@ int main() {
     xSemaphorePower = xSemaphoreCreateBinary();
 
     xTaskCreate(xm_task, "Xm Task", 256, NULL, 1, NULL);
-   xTaskCreate(ym_task, "Ym Task", 256, NULL, 1, NULL);
+    xTaskCreate(ym_task, "Ym Task", 256, NULL, 1, NULL);
      xTaskCreate(uartm_task, "UARTm Task", 256, NULL, 1, NULL);
 
-    xTaskCreate(xf_task, "Xf Task", 256, NULL, 1, NULL);
-    xTaskCreate(yf_task, "Yf Task", 256, NULL, 1, NULL);
-    xTaskCreate(uartf_task, "UARTf Task", 256, NULL, 1, NULL);
+    //xTaskCreate(xf_task, "Xf Task", 256, NULL, 1, NULL);
+    //xTaskCreate(yf_task, "Yf Task", 256, NULL, 1, NULL);
+    //xTaskCreate(uartf_task, "UARTf Task", 256, NULL, 1, NULL);
 
     xTaskCreate(btn_task, "btn Task", 256, NULL, 1, NULL);
     xTaskCreate(led_task, "led Task", 256, NULL, 1, NULL);
