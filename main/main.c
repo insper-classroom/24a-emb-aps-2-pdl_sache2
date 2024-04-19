@@ -22,8 +22,8 @@
 #define Yf_AXIS_CHANNEL 29
 #define BTN_A 2
 #define BTN_B 3
-#define BTN_X 4
-#define BTN_Y 5
+#define BTN_X 16
+#define BTN_Y 17
 #define BTN_TL 6
 #define BTN_TR 7
 // #define BTN_SELECT
@@ -36,6 +36,8 @@
 #define BTN_DPAD_RIGHT 13
 #define BUZZER 14
 #define LED_GREEN 15
+#define BLUETOOTH_TX_PIN 5
+#define BLUETOOTH_RX_PIN 4
 
 QueueHandle_t xQueueAdcm;
 QueueHandle_t xQueueAdcf;
@@ -61,15 +63,15 @@ void beep(int pin, int freq, int time){
 }
 
 void led_startup_task(void *p) {
-    gpio_init(LED_GREEN);           // Inicializa o pino do LED
-    gpio_set_dir(LED_GREEN, GPIO_OUT);  // Configura o pino como saída
+    gpio_init(LED_GREEN);          
+    gpio_set_dir(LED_GREEN, GPIO_OUT);  
 
-    gpio_put(LED_GREEN, 1);         // Acende o LED
-    beep(BUZZER, 1000, 1000);        // Emite um beep
-    vTaskDelay(pdMS_TO_TICKS(5000)); // Espera por 5 segundos
-    gpio_put(LED_GREEN, 0);         // Apaga o LED
+    gpio_put(LED_GREEN, 1);         
+    beep(BUZZER, 1000, 1000);       
+    vTaskDelay(pdMS_TO_TICKS(5000));
+    gpio_put(LED_GREEN, 0);         
 
-    vTaskDelete(NULL);              // Encerra a tarefa
+    vTaskDelete(NULL);             
 }
 
 // void btnpower_callback(uint gpio, uint32_t events) {
@@ -310,6 +312,8 @@ int main() {
     xTaskCreate(xm_task, "Xm Task", 256, NULL, 1, NULL);
     xTaskCreate(ym_task, "Ym Task", 256, NULL, 1, NULL);
     xTaskCreate(uartm_task, "UARTm Task", 256, NULL, 1, NULL);
+
+    // xTaskCreate(hc06_task, "HC06 Task", 256, NULL, 1, NULL);
 
     //xTaskCreate(xf_task, "Xf Task", 256, NULL, 1, NULL);
     //xTaskCreate(yf_task, "Yf Task", 256, NULL, 1, NULL);
