@@ -47,6 +47,31 @@ typedef struct adc {
     int val;
 } adc_t;
 
+void beep(int pin, int freq, int time){
+    gpio_init(BUZZER);  // Initialize GPIO pin
+    gpio_set_dir(BUZZER, GPIO_OUT); 
+    long delay = 1000000 / (2 * freq);
+    long cycles = (long)freq * time / 1000;
+    for (long i = 0; i < cycles; i++){
+        gpio_put(pin, 1);
+        sleep_us(delay);
+        gpio_put(pin, 0);
+        sleep_us(delay);
+    }
+}
+
+void led_startup_task(void *p) {
+    gpio_init(LED_GREEN);           // Inicializa o pino do LED
+    gpio_set_dir(LED_GREEN, GPIO_OUT);  // Configura o pino como saída
+
+    gpio_put(LED_GREEN, 1);         // Acende o LED
+    beep(BUZZER, 1000, 1000);        // Emite um beep
+    vTaskDelay(pdMS_TO_TICKS(5000)); // Espera por 5 segundos
+    gpio_put(LED_GREEN, 0);         // Apaga o LED
+
+    vTaskDelete(NULL);              // Encerra a tarefa
+}
+
 // void btnpower_callback(uint gpio, uint32_t events) {
 
 //     if (events == 0x4) {
@@ -117,20 +142,6 @@ void init_buttons(void) {
     init_button(BTN_DPAD_LEFT);
     init_button(BTN_DPAD_RIGHT);
 }
-
-// void beep(int pin, int freq, int time){
-//     gpio_init(BUZZER);  // Initialize GPIO pin
-//     gpio_set_dir(BUZZER, GPIO_OUT); 
-//     long delay = 1000000 / (2 * freq);
-//     long cycles = (long)freq * time / 1000;
-//     for (long i = 0; i < cycles; i++){
-//         gpio_put(pin, 1);
-//         sleep_us(delay);
-//         gpio_put(pin, 0);
-//         sleep_us(delay);
-//     }
-// }
-
 
 
 void write_package(adc_t data) {
@@ -286,13 +297,6 @@ void btn_task(void *p) {
     }
 }
 
-void led_task(void *p){
-    //beep(BUZZER,500,500);
-    gpio_init(LED_GREEN);  // Initialize GPIO pin
-    gpio_set_dir(LED_GREEN, GPIO_OUT);
-    gpio_put(LED_GREEN,1);
-}
-
 int main() {
     stdio_init_all();
     adc_setup();
@@ -302,6 +306,7 @@ int main() {
     xQueueBTN = xQueueCreate(1, sizeof(uint));
     xSemaphorePower = xSemaphoreCreateBinary();
 
+    xTaskCreate(led_startup_task, "LED Startup Task", 256, NULL, 2, NULL);
     xTaskCreate(xm_task, "Xm Task", 256, NULL, 1, NULL);
     xTaskCreate(ym_task, "Ym Task", 256, NULL, 1, NULL);
     xTaskCreate(uartm_task, "UARTm Task", 256, NULL, 1, NULL);
@@ -311,7 +316,6 @@ int main() {
     //xTaskCreate(uartf_task, "UARTf Task", 256, NULL, 1, NULL);
 
     xTaskCreate(btn_task, "btn Task", 256, NULL, 1, NULL);
-    //xTaskCreate(led_task, "led Task", 256, NULL, 1, NULL);
 
     vTaskStartScheduler();
 
