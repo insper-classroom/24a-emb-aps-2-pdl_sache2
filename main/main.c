@@ -217,31 +217,6 @@ void ym_task(void *p) {
     
 }
 
-// void xf_task(void *p) {
-//     adc_t data;
-//     data.axis = 14; // X-axis
-
-//     while (1) {
-//         data.val = read_and_scale_adc(2);
-//         if (data.val != 0)
-//             xQueueSend(xQueueAdcf, &data, portMAX_DELAY);
-//         vTaskDelay(pdMS_TO_TICKS(10));
-//     }
-// }
-
-// void yf_task(void *p) {
-//     adc_t data;
-//     data.axis = 15; // Y-axis
-
-//     while (1) {
-//         data.val = read_and_scale_adc(3);
-//         if (data.val != 0)
-//             //xQueueSend(xQueueAdcf, &data, portMAX_DELAY);
-//         vTaskDelay(pdMS_TO_TICKS(10));
-//     }
-    
-// }
-
 void uartm_task(void *p) {
     adc_t data;
     
@@ -305,8 +280,6 @@ int main() {
 
     // xTaskCreate(hc06_task, "HC06 Task", 256, NULL, 1, NULL);
 
-    //xTaskCreate(xf_task, "Xf Task", 256, NULL, 1, NULL);
-    //xTaskCreate(yf_task, "Yf Task", 256, NULL, 1, NULL);
     //xTaskCreate(uartf_task, "UARTf Task", 256, NULL, 1, NULL);
 
     xTaskCreate(btn_task, "btn Task", 256, NULL, 1, NULL);
