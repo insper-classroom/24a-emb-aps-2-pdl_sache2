@@ -1,70 +1,59 @@
 import serial
 import uinput
 
-ser = serial.Serial('/dev/ttyACM0', 115200) # Mude a porta para rfcomm0 se estiver usando bluetooth no linux
-# Caso você esteja usando windows você deveria definir uma porta fixa para seu dispositivo (para facilitar sua vida mesmo)
-# Siga esse tutorial https://community.element14.com/technologies/internet-of-things/b/blog/posts/standard-serial-over-bluetooth-on-windows-10 e mude o código acima para algo como: ser = serial.Serial('COMX', 9600) (onde X é o número desejado)
+ser = serial.Serial('/dev/ttyACM0', 115200)
 
-# (Mais códigos aqui https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/uapi/linux/input-event-codes.h?h=v4.7)
-buttons = [uinput.BTN_A, # 0
-    uinput.BTN_B, # 1
-    uinput.BTN_X, # 2
-    uinput.BTN_Y, # 3
-    uinput.BTN_TL, # 4
-    uinput.BTN_TR, # 5
-    #uinput.BTN_TL2, # 6
-    #uinput.BTN_TR2, # 7
-    #uinput.BTN_SELECT, # 8
-    #uinput.BTN_START, # 9
-    uinput.BTN_THUMBL, # 10
-    uinput.BTN_THUMBR, # 11
-    uinput.BTN_DPAD_UP, # 12
-    uinput.BTN_DPAD_DOWN, # 13
-    uinput.BTN_DPAD_LEFT,
-    uinput.BTN_DPAD_RIGHT,
-          ]
-axes = [uinput.ABS_X, uinput.ABS_Y,uinput.ABS_RX, uinput.ABS_RY]
-button_quantity = 12 # Quantidade de botões no controlador (sem contar com o joystick)
+# Create new device with both mouse and keyboard events
+device = uinput.Device([
+    uinput.BTN_LEFT,
+    uinput.BTN_RIGHT,
+    uinput.REL_X,
+    uinput.REL_Y,
+    uinput.KEY_W,
+    uinput.KEY_A,
+    uinput.KEY_S,
+    uinput.KEY_D,
+    uinput.KEY_SPACE,
+    uinput.KEY_UP,
+    uinput.KEY_DOWN,
+    uinput.KEY_LEFT,
+    uinput.KEY_RIGHT
+])
 
-# Criando gamepad emulado
-device = uinput.Device(buttons + axes)
-
-
-# Função para analisar os dados recebidos do dispositivo externo
 def parse_data(data):
-    """
-    Esta função analisa os dados recebidos do dispositivo externo e retorna o botão e o valor correspondentes.
-
-    Argumentos:
-    data (bytes): Os dados recebidos do dispositivo externo.
-
-    Retorna:device.emit(axes[button - button_quantity], value)
-    int, int: O número do botão e o valor do botão.
-    """
-    button = data[0]  # Axis no C, o botão apertado
-    value = int.from_bytes(data[1:3], byteorder='big', signed=True) # Valor do botão (Apertado, não apertado ou algum outro estado)
+    axis = data[0]  # 0 for X, 1 for Y, 2 for keys
+    value = int.from_bytes(data[1:3], byteorder='little', signed=True)
     print(f"Received data: {data}")
-    print(f"button: {button}, value: {value}")
-    return button, value
+    print(f"axis: {axis}, value: {value}")
+    return axis, value
 
-def emulate_controller(button, value):
-    """
-    Esta função emula a entrada do controlador no sistema com base no botão e valor recebidos.
+def move_mouse(axis, value):
+    if axis == 0:    # X-axis
+        device.emit(uinput.REL_X, value)
+    elif axis == 1:  # Y-axis
+        device.emit(uinput.REL_Y, value)
 
-    Argumentos:
-    button (int): O número do botão a ser emulado.
-    value (int): O valor do botão.
-
-    Retorna:
-    None
-    """
-    if button < button_quantity:  # Se o botão estiver entre os botões declarados
-        device.emit(buttons[button], value)
-    else:  # Se não, ele é um eixo
-        device.emit(axes[button - button_quantity], value)
+def handle_key_event(value):
+    # Define key mapping based on value
+    key_map = {
+        1: uinput.KEY_W,
+        2: uinput.KEY_A,
+        3: uinput.KEY_S,
+        4: uinput.KEY_D,
+        5: uinput.KEY_SPACE,
+        6: uinput.KEY_UP,
+        7: uinput.KEY_DOWN,
+        8: uinput.KEY_LEFT,
+        9: uinput.KEY_RIGHT,
+        10: uinput.BTN_LEFT,   # Mouse left click
+        11: uinput.BTN_RIGHT   # Mouse right click
+    }
+    key = key_map.get(abs(value))
+    if key:
+        device.emit(key, value > 0)  # Press or release based on sign of value
 
 try:
-    # Pacote de sync
+    # Sync package
     while True:
         print('Waiting for sync package...')
         while True:
@@ -72,11 +61,13 @@ try:
             if data == b'\xff':
                 break
 
-        # Lendo 4 bytes da uart
+        # Read 4 bytes from UART
         data = ser.read(3)
-        print(data)
-        button, value = parse_data(data)
-        emulate_controller(button, value)
+        axis, value = parse_data(data)
+        if axis < 2:
+            move_mouse(axis, value)
+        else:
+            handle_key_event(value)
 
 except KeyboardInterrupt:
     print("Program terminated by user")
