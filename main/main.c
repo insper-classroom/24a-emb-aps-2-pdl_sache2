@@ -18,22 +18,17 @@
 
 #define Xm_AXIS_CHANNEL 26
 #define Ym_AXIS_CHANNEL 27
-#define Xf_AXIS_CHANNEL 28
-#define Yf_AXIS_CHANNEL 29
-#define BTN_A 2
-#define BTN_B 3
-#define BTN_X 16
-#define BTN_Y 17
-#define BTN_TL 6
-#define BTN_TR 7
-// #define BTN_SELECT
-// #define BTN_START
-#define BTN_THUMBL 8
-#define BTN_THUMBR 9
-#define BTN_DPAD_UP 10
-#define BTN_DPAD_DOWN 11
-#define BTN_DPAD_LEFT 12
-#define BTN_DPAD_RIGHT 13
+#define KEY_W 3
+#define KEY_S 16
+#define KEY_D 17
+#define KEY_A 6
+#define KEY_SPACE 7
+#define KEY_UP 8
+#define KEY_DOWN 9
+#define KEY_LEFT 10
+#define KEY_RIGHT 11
+#define BTN_LEFT 12
+#define BTN_RIGHT 13
 #define BUZZER 14
 #define LED_GREEN 15
 #define BLUETOOTH_TX_PIN 5
@@ -89,29 +84,27 @@ void btn_callback(uint gpio, uint32_t events) {
     uint btnPressed = 0;
 
     if (events == 0x4) {  // Check if the interrupt event is a button press event
-        if (gpio == BTN_A) {
-            btnPressed = 0;  // Corresponds to "A" button
-        } else if (gpio == BTN_B) {
-            btnPressed = 1;  // Corresponds to "B" button
-        } else if (gpio == BTN_X) {
+        if (gpio == KEY_W) {
+            btnPressed = 1;  // Corresponds to "A" button
+        } else if (gpio == KEY_S) {
             btnPressed = 2;  // Corresponds to "X" button
-        } else if (gpio == BTN_Y) {
+        } else if (gpio == KEY_D) {
             btnPressed = 3;  // Corresponds to "Y" button
-        } else if (gpio == BTN_TL) {
+        } else if (gpio == KEY_A) {
             btnPressed = 4;  // Corresponds to "TL" button
-        } else if (gpio == BTN_TR) {
+        } else if (gpio == KEY_SPACE) {
             btnPressed = 5;  // Corresponds to "TR" button
-        } else if (gpio == BTN_THUMBL) {
+        } else if (gpio == KEY_UP) {
             btnPressed = 6;  // Corresponds to "THUMBL" button (Left Thumb)
-        } else if (gpio == BTN_THUMBR) {
+        } else if (gpio == KEY_DOWN) {
             btnPressed = 7;  // Corresponds to "THUMBR" button (Right Thumb)
-        } else if (gpio == BTN_DPAD_UP) {
+        } else if (gpio == KEY_LEFT) {
             btnPressed = 8;  // Corresponds to "DPAD UP" button
-        } else if (gpio == BTN_DPAD_DOWN) {
+        } else if (gpio == KEY_RIGHT) {
             btnPressed = 9; // Corresponds to "DPAD DOWN" button
-        } else if (gpio == BTN_DPAD_LEFT) {
+        } else if (gpio == BTN_LEFT) {
             btnPressed = 10; // Corresponds to "DPAD LEFT" button
-        } else if (gpio == BTN_DPAD_RIGHT) {
+        } else if (gpio == BTN_RIGHT) {
             btnPressed = 11; // Corresponds to "DPAD RIGHT" button
         }
     }
@@ -131,18 +124,17 @@ void init_button(uint pin) {
 }
 
 void init_buttons(void) {
-    init_button(BTN_A);
-    init_button(BTN_B);
-    init_button(BTN_X);
-    init_button(BTN_Y);
-    init_button(BTN_TL);
-    init_button(BTN_TR);
-    init_button(BTN_THUMBL);
-    init_button(BTN_THUMBR);
-    init_button(BTN_DPAD_UP);
-    init_button(BTN_DPAD_DOWN);
-    init_button(BTN_DPAD_LEFT);
-    init_button(BTN_DPAD_RIGHT);
+    init_button(KEY_A);
+    init_button(KEY_D);
+    init_button(KEY_DOWN);
+    init_button(KEY_LEFT);
+    init_button(KEY_RIGHT);
+    init_button(KEY_S);
+    init_button(KEY_SPACE);
+    init_button(KEY_UP);
+    init_button(KEY_W);
+    init_button(BTN_LEFT);
+    init_button(BTN_RIGHT);
 }
 
 
@@ -162,8 +154,6 @@ void adc_setup() {
     adc_init();
     adc_gpio_init(Xm_AXIS_CHANNEL);
     adc_gpio_init(Ym_AXIS_CHANNEL);
-    adc_gpio_init(Xf_AXIS_CHANNEL);
-    adc_gpio_init(Yf_AXIS_CHANNEL);
 }
 
 
@@ -291,8 +281,8 @@ void btn_task(void *p) {
                 last_press_time[BtnValue] = current_time;  // Atualiza o último tempo de pressionamento para o botão atual
                 
                 // Prepara o pacote de dados para ser enviado
-                data.axis = BtnValue;
-                data.val = 1;
+                data.val = BtnValue;
+                data.axis = 2;
                 write_package(data);  // Envio do pacote
             }
         }
