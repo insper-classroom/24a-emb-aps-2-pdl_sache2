@@ -44,6 +44,11 @@ typedef struct adc {
     int val;
 } adc_t;
 
+typedef struct btns{
+    char btnPressed;
+    int value;
+} btns_f;
+
 void beep(int pin, int freq, int time){
     gpio_init(BUZZER);  // Initialize GPIO pin
     gpio_set_dir(BUZZER, GPIO_OUT); 
@@ -63,7 +68,7 @@ void led_startup_task(void *p) {
 
     gpio_put(LED_GREEN, 1);         
     beep(BUZZER, 1000, 1000);       
-    vTaskDelay(pdMS_TO_TICKS(5000));
+    vTaskDelay(pdMS_TO_TICKS(3000));
     gpio_put(LED_GREEN, 0);         
 
     vTaskDelete(NULL);             
@@ -81,36 +86,66 @@ void led_startup_task(void *p) {
 // }
 
 void btn_callback(uint gpio, uint32_t events) {
-    uint btnPressed = 0;
+    btns_f buttons;
 
-    if (events == 0x4) {  // Check if the interrupt event is a button press event
+    if (events == 0x4) { 
+        buttons.value=3; // Check if the interrupt event is a button press event
         if (gpio == KEY_W) {
-            btnPressed = 1;  // Corresponds to "A" button
-        } else if (gpio == KEY_S) {
-            btnPressed = 3;  // Corresponds to "X" button
-        } else if (gpio == KEY_D) {
-            btnPressed = 4;  // Corresponds to "Y" button
-        } else if (gpio == KEY_A) {
-            btnPressed = 2;  // Corresponds to "TL" button
-        } else if (gpio == KEY_SPACE) {
-            btnPressed = 5;  // Corresponds to "TR" button
-        } else if (gpio == KEY_UP) {
-            btnPressed = 6;  // Corresponds to "THUMBL" button (Left Thumb)
-        } else if (gpio == KEY_DOWN) {
-            btnPressed = 7;  // Corresponds to "THUMBR" button (Right Thumb)
-        } else if (gpio == KEY_LEFT) {
-            btnPressed = 8;  // Corresponds to "DPAD UP" button
-        } else if (gpio == KEY_RIGHT) {
-            btnPressed = 9; // Corresponds to "DPAD DOWN" button
-        } else if (gpio == BTN_LEFT) {
-            btnPressed = 10; // Corresponds to "DPAD LEFT" button
-        } else if (gpio == BTN_RIGHT) {
-            btnPressed = 11; // Corresponds to "DPAD RIGHT" button
+            buttons.btnPressed = 1;  // Corresponds to "A" button
+        } if (gpio == KEY_S) {
+            buttons.btnPressed = 3;  // Corresponds to "X" button
+        } if (gpio == KEY_D) {
+            buttons.btnPressed = 4;  // Corresponds to "Y" button
+        } if (gpio == KEY_A) {
+            buttons.btnPressed = 2;  // Corresponds to "TL" button
+        } if (gpio == KEY_SPACE) {
+            buttons.btnPressed = 5;  // Corresponds to "TR" button
+        } if (gpio == KEY_UP) {
+            buttons.btnPressed = 6;  // Corresponds to "THUMBL" button (Left Thumb)
+        } if (gpio == KEY_DOWN) {
+            buttons.btnPressed = 7;  // Corresponds to "THUMBR" button (Right Thumb)
+        } if (gpio == KEY_LEFT) {
+            buttons.btnPressed = 8;  // Corresponds to "DPAD UP" button
+        } if (gpio == KEY_RIGHT) {
+            buttons.btnPressed = 9; // Corresponds to "DPAD DOWN" button
+        } if (gpio == BTN_LEFT) {
+            buttons.btnPressed = 10; // Corresponds to "DPAD LEFT" button
+        } if (gpio == BTN_RIGHT) {
+            buttons.btnPressed = 11; // Corresponds to "DPAD RIGHT" button
         }
+        xQueueSendFromISR(xQueueBTN, &buttons, NULL);
+    }
+    if (events == 0x8){
+        buttons.value=2; // Check if the interrupt event is a button press event
+        if (gpio == KEY_W) {
+            buttons.btnPressed = 1;  // Corresponds to "A" button
+        } if (gpio == KEY_S) {
+            buttons.btnPressed = 3;  // Corresponds to "X" button
+        } if (gpio == KEY_D) {
+            buttons.btnPressed = 4;  // Corresponds to "Y" button
+        } if (gpio == KEY_A) {
+            buttons.btnPressed = 2;  // Corresponds to "TL" button
+        } if (gpio == KEY_SPACE) {
+            buttons.btnPressed = 5;  // Corresponds to "TR" button
+        } if (gpio == KEY_UP) {
+            buttons.btnPressed = 6;  // Corresponds to "THUMBL" button (Left Thumb)
+        } if (gpio == KEY_DOWN) {
+            buttons.btnPressed = 7;  // Corresponds to "THUMBR" button (Right Thumb)
+        } if (gpio == KEY_LEFT) {
+            buttons.btnPressed = 8;  // Corresponds to "DPAD UP" button
+        } if (gpio == KEY_RIGHT) {
+            buttons.btnPressed = 9; // Corresponds to "DPAD DOWN" button
+        } if (gpio == BTN_LEFT) {
+            buttons.btnPressed = 10; // Corresponds to "DPAD LEFT" button
+        } if (gpio == BTN_RIGHT) {
+            buttons.btnPressed = 11; // Corresponds to "DPAD RIGHT" button
+        }
+        xQueueSendFromISR(xQueueBTN, &buttons, NULL);
+
     }
 
     // Enqueue the button pressed
-    xQueueSendFromISR(xQueueBTN, &btnPressed, NULL);
+    
 }
 
 // Function to initialize a single button
@@ -241,23 +276,23 @@ void uartm_task(void *p) {
 void btn_task(void *p) {
     init_buttons();  // Assegura que os botões estão inicializados
     
-    uint BtnValue;
+    btns_f buttons;
     adc_t data;
     static TickType_t last_press_time[14] = {0};  // Array para armazenar o último tempo de pressionamento de cada botão
     TickType_t current_time;
     const TickType_t debounce_delay = pdMS_TO_TICKS(300);  // Conversão de tempo de debounce para ticks
 
     while (1) {
-        if (xQueueReceive(xQueueBTN, &BtnValue, portMAX_DELAY)) {
+        if (xQueueReceive(xQueueBTN, &buttons, portMAX_DELAY)) {
             current_time = xTaskGetTickCount();  // Pega o tempo atual em ticks
 
             // Verifica se o intervalo desde o último pressionamento é maior que o tempo de debounce
-            if (current_time - last_press_time[BtnValue] >= debounce_delay) {
-                last_press_time[BtnValue] = current_time;  // Atualiza o último tempo de pressionamento para o botão atual
+            if (current_time - last_press_time[buttons.btnPressed] >= debounce_delay) {
+                last_press_time[buttons.btnPressed] = current_time;  // Atualiza o último tempo de pressionamento para o botão atual
                 
                 // Prepara o pacote de dados para ser enviado
-                data.val = BtnValue;
-                data.axis = 2;
+                data.val = buttons.btnPressed;
+                data.axis = buttons.value;
                 write_package(data);  // Envio do pacote
             }
         }
@@ -271,7 +306,7 @@ int main() {
 
     xQueueAdcm = xQueueCreate(32, sizeof(adc_t));
     xQueueAdcf = xQueueCreate(32, sizeof(adc_t));
-    xQueueBTN = xQueueCreate(1, sizeof(uint));
+    xQueueBTN = xQueueCreate(32, sizeof(btns_f));
     xSemaphorePower = xSemaphoreCreateBinary();
 
     xTaskCreate(led_startup_task, "LED Startup Task", 256, NULL, 2, NULL);

@@ -33,7 +33,7 @@ def move_mouse(axis, value):
     elif axis == 1:  # Y-axis
         device.emit(uinput.REL_Y, value)
 
-def handle_key_event(value):
+def handle_key_event(axis,value):
     # Define key mapping based on value
     key_map = {
         1: uinput.KEY_W,
@@ -50,7 +50,8 @@ def handle_key_event(value):
     }
     key = key_map.get(abs(value))
     if key:
-        device.emit(key, value > 0)  # Press or release based on sign of value
+        device.emit(key, axis>2)
+        
 
 try:
     # Sync package
@@ -67,7 +68,7 @@ try:
         if axis < 2:
             move_mouse(axis, value)
         else:
-            handle_key_event(value)
+            handle_key_event(axis,value)
 
 except KeyboardInterrupt:
     print("Program terminated by user")
