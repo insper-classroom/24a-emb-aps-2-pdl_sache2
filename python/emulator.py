@@ -22,7 +22,7 @@ device = uinput.Device([
 
 def parse_data(data):
     axis = data[0]  # 0 for X, 1 for Y, 2 for keys
-    value = int.from_bytes(data[1:3], byteorder='little', signed=True)
+    value = int.from_bytes(data[1:3], byteorder='big', signed=True)
     print(f"Received data: {data}")
     print(f"axis: {axis}, value: {value}")
     return axis, value

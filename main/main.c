@@ -87,11 +87,11 @@ void btn_callback(uint gpio, uint32_t events) {
         if (gpio == KEY_W) {
             btnPressed = 1;  // Corresponds to "A" button
         } else if (gpio == KEY_S) {
-            btnPressed = 2;  // Corresponds to "X" button
+            btnPressed = 3;  // Corresponds to "X" button
         } else if (gpio == KEY_D) {
-            btnPressed = 3;  // Corresponds to "Y" button
+            btnPressed = 4;  // Corresponds to "Y" button
         } else if (gpio == KEY_A) {
-            btnPressed = 4;  // Corresponds to "TL" button
+            btnPressed = 2;  // Corresponds to "TL" button
         } else if (gpio == KEY_SPACE) {
             btnPressed = 5;  // Corresponds to "TR" button
         } else if (gpio == KEY_UP) {
@@ -179,22 +179,22 @@ int read_and_scale_adc(int axis) {
 
     int scaled_val = ((avg - 2048) / 8);
 
-    if ((scaled_val > -250) && (scaled_val < 250)) {
+    if ((scaled_val > -180) && (scaled_val < 180)) {   
         scaled_val = 0; // Apply deadzone
     }
 
-    return scaled_val / 16;
+    return scaled_val / 64;
 }
 
 void xm_task(void *p) {
     adc_t data;
-    data.axis = 12;
+    data.axis = 0;
      // X-axis
     
 
     while (1) {
         
-        data.val = read_and_scale_adc(0);
+        data.val = - read_and_scale_adc(0);
         //printf("valor: %d\n",data.val);
         //printf("indice e valor x do joystick: %d, %d\n",data.axis,data.val);
         if (data.val != 0)
@@ -205,7 +205,7 @@ void xm_task(void *p) {
 
 void ym_task(void *p) {
     adc_t data;
-    data.axis = 13; // Y-axis
+    data.axis = 1; // Y-axis
 
     while (1) {
         data.val = read_and_scale_adc(1);
@@ -263,6 +263,7 @@ void btn_task(void *p) {
         }
     }
 }
+
 
 int main() {
     stdio_init_all();
