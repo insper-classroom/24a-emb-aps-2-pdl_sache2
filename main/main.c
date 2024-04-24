@@ -14,7 +14,10 @@
 #include "hardware/pwm.h"
 #include <math.h>
 
-#include "hc06.h"
+#include "hc05.h"
+
+// To connect to the bluetooth module, use the following command:
+// sudo rfcomm connect /dev/rfcomm1 00:21:13:01:01:E9
 
 #define Xm_AXIS_CHANNEL 26
 #define Ym_AXIS_CHANNEL 27
@@ -31,8 +34,6 @@
 #define BTN_RIGHT 13
 #define BUZZER 14
 #define LED_GREEN 15
-#define BLUETOOTH_TX_PIN 5
-#define BLUETOOTH_RX_PIN 4
 
 QueueHandle_t xQueueAdcm;
 QueueHandle_t xQueueAdcf;
@@ -67,23 +68,13 @@ void led_startup_task(void *p) {
     gpio_set_dir(LED_GREEN, GPIO_OUT);  
 
     gpio_put(LED_GREEN, 1);         
-    //beep(BUZZER, 1000, 1000);       
-    vTaskDelay(pdMS_TO_TICKS(5000));
+    beep(BUZZER, 1000, 1000);       
+    vTaskDelay(pdMS_TO_TICKS(3000));
     gpio_put(LED_GREEN, 0);         
 
     vTaskDelete(NULL);             
 }
 
-// void btnpower_callback(uint gpio, uint32_t events) {
-
-//     if (events == 0x4) {
-//         if (gpio == BTN_POWER){
-//             xSemaphoreGive(xSemaphorePower);
-
-//         }
-
-//     } 
-// }
 
 void btn_callback(uint gpio, uint32_t events) {
     btns_f buttons;
@@ -141,8 +132,6 @@ void btn_callback(uint gpio, uint32_t events) {
 
     }
     xQueueSendFromISR(xQueueBTN, &buttons, NULL);
-
-    // Enqueue the button pressed
     
 }
 
@@ -170,16 +159,16 @@ void init_buttons(void) {
     init_button(BTN_RIGHT);
 }
 
-
 void write_package(adc_t data) {
     int val = data.val;
     int msb = val >> 8;
     int lsb = val & 0xFF;
 
-    uart_putc_raw(uart0, data.axis); //HC06_UART_ID
-    uart_putc_raw(uart0, msb);
-    uart_putc_raw(uart0, lsb);
-    uart_putc_raw(uart0, -1);
+    // uart1 to send with bluetooth
+    uart_putc_raw(uart1, data.axis);
+    uart_putc_raw(uart1, msb);
+    uart_putc_raw(uart1, lsb);
+    uart_putc_raw(uart1, -1);
 
 }
 
@@ -190,14 +179,14 @@ void adc_setup() {
 }
 
 
-void hc06_task(void *p) {
-    uart_init(HC06_UART_ID, HC06_BAUD_RATE);
-    gpio_set_function(HC06_TX_PIN, GPIO_FUNC_UART);
-    gpio_set_function(HC06_RX_PIN, GPIO_FUNC_UART);
-    hc06_init("pdl-sache", "1234");
+void hc05_task(void *p) {
+    uart_init(hc05_UART_ID, hc05_BAUD_RATE);
+    gpio_set_function(hc05_TX_PIN, GPIO_FUNC_UART);
+    gpio_set_function(hc05_RX_PIN, GPIO_FUNC_UART);
+    hc05_init("pdl-sache", "1234");
 
     while (true) {
-        uart_puts(HC06_UART_ID, "OLAAA ");
+        uart_puts(hc05_UART_ID, "OLAAA ");
         vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
@@ -221,15 +210,11 @@ int read_and_scale_adc(int axis) {
 
 void xm_task(void *p) {
     adc_t data;
-    data.axis = 0;
-     // X-axis
+    data.axis = 0; // X-axis
     
-
     while (1) {
         
         data.val = - read_and_scale_adc(0);
-        //printf("valor: %d\n",data.val);
-        //printf("indice e valor x do joystick: %d, %d\n",data.axis,data.val);
         if (data.val != 0)
             xQueueSend(xQueueAdcm, &data, portMAX_DELAY);
         vTaskDelay(pdMS_TO_TICKS(10));
@@ -242,7 +227,6 @@ void ym_task(void *p) {
 
     while (1) {
         data.val = read_and_scale_adc(1);
-        //printf("indice e valor y do joystick: %d, %d\n",data.axis,data.val);
         if (data.val != 0)
             xQueueSend(xQueueAdcm, &data, portMAX_DELAY);
         vTaskDelay(pdMS_TO_TICKS(10));
@@ -261,16 +245,6 @@ void uartm_task(void *p) {
     }
 }
 
-// void uartf_task(void *p) {
-//     adc_t data;
-    
-//     while (1) {
-//         if (xQueueReceive(xQueueAdcf, &data, portMAX_DELAY)) {
-//             write_package(data);
-//         }
-//     }
-// }
-
 void btn_task(void *p) {
     init_buttons();  // Assegura que os botões estão inicializados
     
@@ -286,7 +260,6 @@ void btn_task(void *p) {
     }
 }
 
-
 int main() {
     stdio_init_all();
     adc_setup();
@@ -301,9 +274,7 @@ int main() {
     xTaskCreate(ym_task, "Ym Task", 256, NULL, 1, NULL);
     xTaskCreate(uartm_task, "UARTm Task", 256, NULL, 1, NULL);
 
-    // xTaskCreate(hc06_task, "HC06 Task", 256, NULL, 1, NULL);
-
-    //xTaskCreate(uartf_task, "UARTf Task", 256, NULL, 1, NULL);
+    xTaskCreate(hc05_task, "HC06 Task", 256, NULL, 1, NULL);
 
     xTaskCreate(btn_task, "btn Task", 256, NULL, 1, NULL);
 

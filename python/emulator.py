@@ -1,7 +1,7 @@
 import serial
 import uinput
 
-ser = serial.Serial('/dev/ttyACM0', 115200)
+ser = serial.Serial('/dev/rfcomm1', 9600)
 
 # Create new device with both mouse and keyboard events
 device = uinput.Device([
