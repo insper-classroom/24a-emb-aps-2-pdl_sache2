@@ -224,8 +224,8 @@ void xm_task(void *p) {
         
         data.val = - read_and_scale_adc(0);
         if (data.val != 0)
-            xQueueSend(xQueueAdcm, &data, portMAX_DELAY);
-        vTaskDelay(pdMS_TO_TICKS(10));
+            xQueueSend(xQueueAdcm, &data, 1);
+        vTaskDelay(pdMS_TO_TICKS(20));
     }
 }
 
@@ -236,8 +236,8 @@ void ym_task(void *p) {
     while (1) {
         data.val = read_and_scale_adc(1);
         if (data.val != 0)
-            xQueueSend(xQueueAdcm, &data, portMAX_DELAY);
-        vTaskDelay(pdMS_TO_TICKS(10));
+            xQueueSend(xQueueAdcm, &data, 1);
+        vTaskDelay(pdMS_TO_TICKS(20));
     }
     
 }
