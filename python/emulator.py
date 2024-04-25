@@ -1,6 +1,10 @@
 import serial
 import uinput
 
+# /dev/rfcomm1 is the serial port created by the Bluetooth connection
+# /dev/ttyACM0 is the serial port created by the USB connection
+
+#ser = serial.Serial('/dev/ttyACM0', 115200)
 ser = serial.Serial('/dev/rfcomm1', 9600)
 
 # Create new device with both mouse and keyboard events
@@ -65,6 +69,7 @@ try:
         # Read 4 bytes from UART
         data = ser.read(3)
         axis, value = parse_data(data)
+        # value = value << 1 
         if axis < 2:
             move_mouse(axis, value)
         else:
