@@ -68,8 +68,8 @@ void led_startup_task(void *p) {
     gpio_set_dir(LED_GREEN, GPIO_OUT);  
 
     gpio_put(LED_GREEN, 1);         
-    beep(BUZZER, 1000, 1000);       
-    vTaskDelay(pdMS_TO_TICKS(3000));
+    // beep(BUZZER, 1000, 1000);       
+    vTaskDelay(pdMS_TO_TICKS(4000));
     gpio_put(LED_GREEN, 0);         
 
     vTaskDelete(NULL);             
@@ -82,52 +82,52 @@ void btn_callback(uint gpio, uint32_t events) {
     if (events == 0x4){ 
         buttons.value=3;// Check if the interrupt event is a button press event
         if (gpio == KEY_W) {
-            buttons.btnPressed = 1;  // Corresponds to "A" button
-        } else if (gpio == KEY_S) {
-            buttons.btnPressed = 3;  // Corresponds to "X" button
+            buttons.btnPressed = 1; // Corresponds to W key
+        } else if (gpio == KEY_S) { 
+            buttons.btnPressed = 3; // Corresponds to S key 
         } else if (gpio == KEY_D) {
-            buttons.btnPressed = 4;  // Corresponds to "Y" button
+            buttons.btnPressed = 4; // Corresponds to D key
         } else if (gpio == KEY_A) {
-            buttons.btnPressed = 2;  // Corresponds to "TL" button
+            buttons.btnPressed = 2;  // Corresponds to A key
         } else if (gpio == KEY_SPACE) {
-            buttons.btnPressed = 5;  // Corresponds to "TR" button
+            buttons.btnPressed = 5;  // Corresponds to SPACE key
         } else if (gpio == KEY_UP) {
-            buttons.btnPressed = 6;  // Corresponds to "THUMBL" button (Left Thumb)
+            buttons.btnPressed = 6; // Corresponds to UP ARROW key
         } else if (gpio == KEY_DOWN) {
-            buttons.btnPressed = 7;  // Corresponds to "THUMBR" button (Right Thumb)
+            buttons.btnPressed = 7;  // Corresponds to DOWN ARROW key
         } else if (gpio == KEY_LEFT) {
-            buttons.btnPressed = 8;  // Corresponds to "DPAD UP" button
+            buttons.btnPressed = 8;  // Corresponds to LEFT ARROW key
         } else if (gpio == KEY_RIGHT) {
-            buttons.btnPressed = 9; // Corresponds to "DPAD DOWN" button
+            buttons.btnPressed = 9; // Corresponds to RIGHT ARROW key
         } else if (gpio == BTN_LEFT) {
-            buttons.btnPressed = 10; // Corresponds to "DPAD LEFT" button
+            buttons.btnPressed = 10; // Corresponds to MOUSE LEFT CLICK
         } else if (gpio == BTN_RIGHT) {
-            buttons.btnPressed = 11; // Corresponds to "DPAD RIGHT" button
+            buttons.btnPressed = 11; // Corresponds to MOUSE RIGHT CLICK
         }
     } else if (events == 0x8){
         buttons.value=2;
         if (gpio == KEY_W) {
-            buttons.btnPressed = 1;  // Corresponds to "A" button
+            buttons.btnPressed = 1;  // Corresponds to W key
         } else if (gpio == KEY_S) {
-            buttons.btnPressed = 3;  // Corresponds to "X" button
+            buttons.btnPressed = 3;  // Corresponds to S key
         } else if (gpio == KEY_D) {
-            buttons.btnPressed = 4;  // Corresponds to "Y" button
+            buttons.btnPressed = 4;  // Corresponds to D key
         } else if (gpio == KEY_A) {
-            buttons.btnPressed = 2;  // Corresponds to "TL" button
+            buttons.btnPressed = 2;  // Corresponds to A key
         } else if (gpio == KEY_SPACE) {
-            buttons.btnPressed = 5;  // Corresponds to "TR" button
+            buttons.btnPressed = 5;  // Corresponds to SPACE key
         } else if (gpio == KEY_UP) {
-            buttons.btnPressed = 6;  // Corresponds to "THUMBL" button (Left Thumb)
+            buttons.btnPressed = 6;  // Corresponds to UP ARROW key
         } else if (gpio == KEY_DOWN) {
-            buttons.btnPressed = 7;  // Corresponds to "THUMBR" button (Right Thumb)
+            buttons.btnPressed = 7;  // Corresponds to DOWN ARROW key
         } else if (gpio == KEY_LEFT) {
-            buttons.btnPressed = 8;  // Corresponds to "DPAD UP" button
+            buttons.btnPressed = 8;  // Corresponds to LEFT ARROW key
         } else if (gpio == KEY_RIGHT) {
-            buttons.btnPressed = 9; // Corresponds to "DPAD DOWN" button
+            buttons.btnPressed = 9; // Corresponds to RIGHT ARROW key
         } else if (gpio == BTN_LEFT) {
-            buttons.btnPressed = 10; // Corresponds to "DPAD LEFT" button
+            buttons.btnPressed = 10; // Corresponds to MOUSE LEFT CLICK
         } else if (gpio == BTN_RIGHT) {
-            buttons.btnPressed = 11; // Corresponds to "DPAD RIGHT" button
+            buttons.btnPressed = 11; // Corresponds to MOUSE RIGHT CLICK
         }
 
     }
