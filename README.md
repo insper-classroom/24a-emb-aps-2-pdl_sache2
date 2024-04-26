@@ -24,4 +24,4 @@ O mais novo projeto da Bahia Games é um controle de videogame personalizado que
 ## Extras
 
 - **Separação de Arquivos**: Arquivos separados em .c e .h
-- **Link para Vídeo Demonstração**:
+- **Link para Vídeo Demonstração**: https://www.youtube.com/watch?v=5YnenCZukoY
